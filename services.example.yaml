@@ -1,0 +1,22 @@
+# Copy to services.yaml. Everything here is optional: Pangolin's HTTP resources show up on their own.
+
+# Groups come from each resource's first Pangolin label (unlabelled ones go under "Services").
+# List groups here to put them first, in this order.
+groups: [Infrastructure, Media, Monitoring]
+
+services:
+  # Change how a Pangolin resource looks: match it by name, hostname or nice ID.
+  - match: grafana.example.com
+    description: Dashboards
+    group: Monitoring
+    icon: grafana            # a name from https://dashboardicons.com, or an image URL
+
+  # Hide one (or give it the label "hidden" in Pangolin, or list it in HUB_HIDE).
+  - match: Backups
+    hidden: true
+
+  # Links that aren't in Pangolin.
+  - name: Router
+    url: https://192.168.1.1
+    group: Network
+    icon: ubiquiti

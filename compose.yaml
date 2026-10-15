@@ -1,0 +1,25 @@
+# hub·modern: a start page for everything behind Pangolin.
+#
+#   1. Put PANGOLIN_API_KEY in a .env file next to this one (see README: "Pangolin API key").
+#   2. docker compose up -d
+#   3. In Pangolin, add a resource for this container (port 3049) with SSO on.
+#
+services:
+  hub-modern:
+    image: ghcr.io/armistice-group/hub-modern:latest
+    container_name: hub-modern
+    restart: unless-stopped
+    ports:
+      - "3049:3000"
+    environment:
+      # Pangolin's Integration API (enable_integration_api: true in Pangolin's config.yml).
+      PANGOLIN_API_URL: https://api.example.com/v1
+      PANGOLIN_API_KEY: ${PANGOLIN_API_KEY:?set PANGOLIN_API_KEY in .env}
+      # The first slug in your Pangolin dashboard's URL. Optional if the key can list orgs.
+      PANGOLIN_ORG_ID: ""
+      # HUB_TITLE: Armistice
+      # HUB_HIDE: hub.example.com,old.example.com
+      # HUB_NEW_TAB: "false"
+    volumes:
+      # Optional: extra links, groups order and per-service overrides. See services.example.yaml.
+      - ./services.yaml:/data/services.yaml:ro
