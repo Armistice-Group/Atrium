@@ -5,7 +5,7 @@
 groups: [Infrastructure, Media, Monitoring]
 
 services:
-  # Change how a Pangolin resource looks: match it by name, hostname or nice ID.
+  # Change how a Pangolin resource looks: match it by its name or hostname.
   - match: grafana.example.com
     description: Dashboards
     group: Monitoring

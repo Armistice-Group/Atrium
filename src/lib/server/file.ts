@@ -25,7 +25,8 @@ export async function readServicesFile(path: string): Promise<{ file: ServicesFi
 	try {
 		text = await readFile(path, 'utf8');
 	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { file: EMPTY, error: null };
+		// Missing, or a directory Docker made because the bind-mounted file didn't exist yet: no extras.
+		if (['ENOENT', 'EISDIR'].includes((err as NodeJS.ErrnoException).code ?? '')) return { file: EMPTY, error: null };
 		return { file: EMPTY, error: `Couldn’t read ${path}: ${(err as Error).message}` };
 	}
 	return parseServicesFile(text, path);

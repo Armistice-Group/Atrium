@@ -1,25 +1,29 @@
-# hub·modern: a start page for everything behind Pangolin.
+# hub·modern, on the same machine as Pangolin. Full walkthrough: README.md → "Set up".
 #
-#   1. Put PANGOLIN_API_KEY in a .env file next to this one (see README: "Pangolin API key").
-#   2. docker compose up -d
-#   3. In Pangolin, add a resource for this container (port 3049) with SSO on.
-#
+# The hub has no published port: the only way in is through Pangolin (with SSO), and it talks
+# to Pangolin's API over Docker's internal network, so the API never faces the internet.
+
 services:
   hub-modern:
     image: ghcr.io/armistice-group/hub-modern:latest
     container_name: hub-modern
     restart: unless-stopped
-    ports:
-      - "3049:3000"
     environment:
-      # Pangolin's Integration API (enable_integration_api: true in Pangolin's config.yml).
-      PANGOLIN_API_URL: https://api.example.com/v1
-      PANGOLIN_API_KEY: ${PANGOLIN_API_KEY:?set PANGOLIN_API_KEY in .env}
-      # The first slug in your Pangolin dashboard's URL. Optional if the key can list orgs.
-      PANGOLIN_ORG_ID: ""
-      # HUB_TITLE: Armistice
-      # HUB_HIDE: hub.example.com,old.example.com
-      # HUB_NEW_TAB: "false"
+      # Pangolin's Integration API, reached by container name over the shared network.
+      PANGOLIN_API_URL: http://pangolin:3003/v1
+      # From .env (step 2 of the README). Read-only: "List Resources" permission only.
+      PANGOLIN_API_KEY: ${PANGOLIN_API_KEY:?put PANGOLIN_API_KEY in .env next to this file}
+      # Your org's ID: the first part of the path in Pangolin's dashboard URL (…/<org-id>/settings).
+      PANGOLIN_ORG_ID: ${PANGOLIN_ORG_ID:?put PANGOLIN_ORG_ID in .env next to this file}
     volumes:
-      # Optional: extra links, groups order and per-service overrides. See services.example.yaml.
+      # Optional extras: links that aren't in Pangolin, icon and group overrides.
       - ./services.yaml:/data/services.yaml:ro
+    networks:
+      - pangolin
+
+networks:
+  pangolin:
+    # Pangolin's Docker network. Newer installs call it pangolin_frontend, older ones pangolin:
+    # step 3 of the README shows how to check; PANGOLIN_NETWORK in .env overrides it.
+    name: ${PANGOLIN_NETWORK:-pangolin_frontend}
+    external: true
