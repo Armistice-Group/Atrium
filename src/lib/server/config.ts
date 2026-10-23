@@ -4,12 +4,19 @@ const bool = (v: string | undefined, fallback: boolean) => (v === undefined || v
 
 /** Everything comes from the environment; see README.md and compose.yaml. */
 export const config = {
-	/** Pangolin's Integration API, e.g. https://api.example.com/v1 */
-	pangolinUrl: (env.PANGOLIN_API_URL ?? '').replace(/\/+$/, ''),
+	/** Pangolin's Integration API, e.g. https://api.example.com/v1. With only a key, self-hosted Pangolin on the same Docker network (what compose.yaml used to set). */
+	pangolinUrl: (env.PANGOLIN_API_URL || (env.PANGOLIN_API_KEY ? 'http://pangolin:3003/v1' : '')).replace(/\/+$/, ''),
 	pangolinKey: env.PANGOLIN_API_KEY ?? '',
 	pangolinOrg: env.PANGOLIN_ORG_ID ?? '',
 	/** Extra links and overrides. */
 	servicesFile: env.HUB_SERVICES_FILE ?? (env.NODE_ENV === 'production' ? '/data/services.yaml' : './services.yaml'),
+	/** Where connections and tile edits made in the UI are saved (hub.json). */
+	dataDir: env.HUB_DATA_DIR ?? (env.NODE_ENV === 'production' ? '/data' : './data'),
+	/** Emails or usernames (from Pangolin's SSO) allowed to change settings; empty means everyone signed in. */
+	admins: (env.HUB_ADMINS ?? '')
+		.split(',')
+		.map((s) => s.trim().toLowerCase())
+		.filter(Boolean),
 	title: env.HUB_TITLE || 'hub·modern',
 	/** Group for services without a Pangolin label. */
 	defaultGroup: env.HUB_DEFAULT_GROUP || 'Services',

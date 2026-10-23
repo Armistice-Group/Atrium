@@ -10,83 +10,61 @@ hub·modern asks Pangolin which web services you have and shows them as tiles wi
 
 ## Set up
 
-You need: a machine already running Pangolin with Docker, and about ten minutes. Every command runs on that machine.
-
-The finished setup looks like this:
+You need: Pangolin (self-hosted, or [Pangolin Cloud](https://pangolin.net) with a Newt site), a machine running Docker that Pangolin can reach, and about ten minutes.
 
 ```
-you ──► Pangolin (SSO) ──► hub-modern ──► Pangolin's API (internal, read-only)
+you ──► Pangolin (SSO) ──► hub-modern ──► Pangolin's API (read-only key)
 ```
 
 - **Pangolin's SSO is the only way to reach the hub.** The hub has no port of its own on the machine.
-- **The hub reads your service list over Docker's private network.** Pangolin's API is never put on the internet.
 - **The hub's API key can only list services.** It can't change anything.
 
-### Step 1. Turn on Pangolin's API
+### Step 1. Create a read-only API key
 
-Pangolin's API is off by default. Open Pangolin's config file (in the folder you installed Pangolin into, usually `~/pangolin/config/config.yml` or `/opt/pangolin/config/config.yml`). Under `flags:`, add one line:
-
-```yaml
-flags:
-  enable_integration_api: true   # ← add this line
-  # (leave any other flags here as they are)
-```
-
-Restart Pangolin from its folder:
-
-```sh
-docker compose restart pangolin
-```
-
-> You do **not** need to add a Traefik route or a DNS record for the API. Pangolin's own guide shows how to put it on `api.yourdomain`, but the hub doesn't need that: it talks to Pangolin directly inside Docker.
-
-### Step 2. Create a read-only API key
-
-In Pangolin's dashboard:
+In Pangolin's dashboard (self-hosted or Cloud):
 
 1. Open your organisation, then **API Keys** in the left menu → **Create API Key**.
 2. Name it `hub-modern`.
 3. Under permissions, tick **only "List Resources"**.
 4. Create it and **copy the key now**. Pangolin shows it once.
 
-While you're in the dashboard, note your **organisation ID**. It's the first part of the path in the address bar: in `https://pangolin.example.com/home-lab/settings/resources`, the ID is `home-lab`.
+Also note your **organisation ID**: the first part of the path in the address bar. In `…/home-lab/settings/resources`, the ID is `home-lab`.
 
-### Step 3. Find Pangolin's Docker network
+> **Self-hosted only:** Pangolin's API is off by default. In Pangolin's `config/config.yml`, add `enable_integration_api: true` under `flags:` and run `docker compose restart pangolin`. You don't need a Traefik route or DNS record for it: the hub reaches it inside Docker at `http://pangolin:3003/v1`.
+>
+> If Pangolin runs from a compose file with no `config` folder on the host, edit the file inside the container: `docker cp pangolin:/app/config/config.yml .`, edit it, `docker cp config.yml pangolin:/app/config/config.yml`, then `docker restart pangolin`.
+>
+> **Pangolin Cloud:** nothing to turn on. The API is at `https://api.pangolin.net/v1`.
 
-The hub joins Pangolin's network so it can reach Pangolin as `http://pangolin:3003`. Check the network's name:
+### Step 2. Find the Docker network Pangolin uses to reach the hub
+
+The hub joins the Docker network of whatever forwards traffic to it, so it can be reached as `hub-modern:3000`:
+
+- **Self-hosted:** the `pangolin` container's network.
+- **Pangolin Cloud:** your **Newt** container's network (the site connector on this machine).
 
 ```sh
 docker inspect pangolin --format '{{range $name, $_ := .NetworkSettings.Networks}}{{println $name}}{{end}}'
+#   or, with Pangolin Cloud, the Newt container's name instead of "pangolin"
 ```
 
-- **`pangolin_frontend`** (newer installs): nothing to do.
-- **`pangolin`** (older installs): you'll put `PANGOLIN_NETWORK=pangolin` in `.env` in the next step.
+If it prints `pangolin_frontend`, there's nothing to do. Otherwise put `PANGOLIN_NETWORK=<that name>` in `.env` in the next step.
 
-### Step 4. Start the hub
+### Step 3. Start the hub
 
 ```sh
 mkdir -p ~/hub-modern && cd ~/hub-modern
 curl -fsSLO https://raw.githubusercontent.com/Armistice-Group/hub-modern/main/compose.yaml
 touch services.yaml
 cat > .env <<'ENV'
-PANGOLIN_API_KEY=paste-the-key-from-step-2
-PANGOLIN_ORG_ID=home-lab
+HUB_ADMINS=you@example.com
 ENV
-chmod 600 .env
 docker compose up -d
 ```
 
-(If step 3 said `pangolin`, also add `PANGOLIN_NETWORK=pangolin` to `.env`.)
+`HUB_ADMINS` is who may open **Settings**: your email or username as Pangolin's sign-in knows it. Leave it out and anyone who can open the hub can change its settings.
 
-Check that the hub can reach Pangolin:
-
-```sh
-docker exec hub-modern wget -qO- http://pangolin:3003/v1/docs >/dev/null && echo "API reachable"
-```
-
-If that fails, step 1 didn't take effect (restart Pangolin again) or the network name in step 3 is wrong.
-
-### Step 5. Put the hub behind Pangolin
+### Step 4. Put the hub behind Pangolin
 
 In Pangolin's dashboard, **Resources → Add Resource**:
 
@@ -95,19 +73,47 @@ In Pangolin's dashboard, **Resources → Add Resource**:
 | Name | `Hub` |
 | Type | HTTP |
 | Subdomain | whatever you like, e.g. `hub` → `hub.yourdomain` |
-| Site | the **local** site (the machine Pangolin runs on) |
+| Site | the site on the machine running the hub (self-hosted: the **local** site) |
 | Target | `hub-modern`, port `3000`, method `http` |
 
-Then, on the new resource's **Authentication** tab:
+Then, on the new resource's **Authentication** tab, make sure **Use Platform SSO** is on and allow **only your account**.
 
-1. Make sure **Use Platform SSO** is on.
-2. Under users and roles, allow **only your account**.
+### Step 5. Connect Pangolin
 
-Open `https://hub.yourdomain`. Pangolin asks you to sign in, then you see every service.
+Open `https://hub.yourdomain`, sign in, and press **Connect Pangolin** (or the ⚙ in the header). Choose **Pangolin Cloud** or **Self-hosted, same Docker network**, paste the key and org ID from step 1, press **Test**, then **Add connection**. Your services appear.
 
-**Tip:** to keep the hub's own tile off the page, give the Hub resource the label `hidden` in Pangolin.
+You can add more than one connection (two orgs, or Cloud and a self-hosted Pangolin): their services are merged onto one page.
+
+**Tip:** to keep the hub's own tile off the page, give the Hub resource the label `hidden` in Pangolin, or hide it with its edit button.
+
+<details>
+<summary>Prefer configuring it in compose instead?</summary>
+
+Set `PANGOLIN_API_URL`, `PANGOLIN_API_KEY` and `PANGOLIN_ORG_ID` in `.env`. That connection shows in Settings as *From environment* and can only be changed there. Without `PANGOLIN_API_URL`, the hub uses `http://pangolin:3003/v1`.
+</details>
+
 
 ---
+
+## Editing tiles
+
+Hover a tile and press the ✎ pencil to change its **icon**, **name**, **group** or **description**, or to **hide** it. Leave a field empty to keep what Pangolin says. Hidden tiles are listed in Settings, where you can bring them back. **Reset to original** undoes every change to that tile.
+
+For the icon, type a name from [dashboardicons.com](https://dashboardicons.com) (e.g. `grafana`) or paste any image URL. The form previews it before you save.
+
+Turn on **Wide tile** in the same form to make a tile take two columns, handy for the ones you open most.
+
+**Size S / M / L** (right of the site chips) switches between small tiles (icon and name only), the standard ones, and large cards with big icons. Each browser remembers its own choice.
+
+## Groups
+
+Tiles are grouped by their **first label** in Pangolin, or by the group set with their edit button. In **Settings → Groups** you can:
+
+- **Reorder** groups by dragging them, or with the ↑ ↓ buttons. **Reset to the default order** goes back to `services.yaml`'s `groups:` list, then A–Z.
+- **Rename** a group. Its tiles follow, and so do new ones Pangolin adds with that label. Labels in Pangolin aren't changed.
+- **Remove** a group. Its tiles move to the default group (*Services*).
+
+To make a new group, type its name in a tile's **Group** field.
 
 ## How services are found
 
@@ -122,6 +128,8 @@ The hub asks Pangolin for every resource in your organisation every minute, then
 | Has the label `hidden` | ❌ |
 
 **Name:** the resource's name in Pangolin.
+
+**Sites:** when your services run on more than one Pangolin site, chips under the greeting show each site with its up/down dot and number of services. Click one to see only that site (search too). **Group by → Site** sorts the page into sections by site instead of by label. A resource with targets on two sites appears under both. Each browser remembers its choice.
 
 **Group:** the resource's **first label** in Pangolin. For example, label Jellyfin and Immich `Media` and they appear together under *Media*. Resources without a label go under *Services*.
 
@@ -149,10 +157,11 @@ If nothing matches, the tile gets a coloured letter instead. To pick the logo yo
 
 ## services.yaml (optional)
 
-`services.yaml` sits next to `compose.yaml` and is read on every page load, so you never need to restart. Use it for links that aren't in Pangolin, and to change how a Pangolin service looks:
+`services.yaml` sits next to `compose.yaml` and is read on every page load, so you never need to restart. Use it for links that aren't in Pangolin, to set the order of groups, and to change how services look from a file. Changes made with a tile's edit button take priority over the file.
 
 ```yaml
 # Order of the groups on the page (any group not listed comes after these, A–Z).
+# An order set in Settings → Groups takes priority.
 groups: [Infrastructure, Media, Monitoring]
 
 services:
@@ -183,6 +192,7 @@ All optional, in `compose.yaml` under `environment:`.
 
 | Variable | Default | What it does |
 | --- | --- | --- |
+| `HUB_ADMINS` | | Emails or usernames (from Pangolin's sign-in) who may open Settings and edit tiles, comma-separated. Empty: anyone who can open the hub. |
 | `HUB_TITLE` | `hub·modern` | The browser tab's title |
 | `HUB_DEFAULT_GROUP` | `Services` | Group for resources without a label |
 | `HUB_HIDE` | | Names or hostnames to leave out, comma-separated (like the `hidden` label) |
@@ -198,31 +208,35 @@ cd ~/hub-modern && docker compose pull && docker compose up -d
 
 ## Troubleshooting
 
-The page shows a banner when something's wrong. The usual ones:
+The page shows a banner when something's wrong, and Settings shows each connection's status. **Test** in a connection's form tries it before you save. The usual messages:
 
-| Banner says | Fix |
+| Message | Fix |
 | --- | --- |
-| *Couldn't reach Pangolin at http://pangolin:3003* | The API isn't on (step 1), or the hub isn't on Pangolin's network (step 3) |
-| *Pangolin refused the API key (401)* | The key is wrong or was deleted. Make a new one (step 2). |
-| *Pangolin refused the API key (403)* | The key is missing "List Resources", or `PANGOLIN_ORG_ID` is wrong |
-| *answered with something other than JSON* | `PANGOLIN_API_URL` must end in `/v1` |
+| *Couldn't reach Pangolin at http://pangolin:3003* | Self-hosted: the API isn't on, or the hub isn't on Pangolin's network (steps 1–2) |
+| *Pangolin refused the API key (401)* | The key is wrong or was deleted. Make a new one (step 1). |
+| *Pangolin refused the API key (403)* | The key is missing "List Resources", or the organisation ID is wrong |
+| *answered with something other than JSON* | The API URL must end in `/v1` |
+| *Settings* gives a 403 | You're not in `HUB_ADMINS`: check the email Pangolin signs you in with |
+| *Docker says network … not found* | `PANGOLIN_NETWORK` in `.env` doesn't match step 2 |
 
-Pangolin's address bar shows the right org ID (step 2). `docker logs hub-modern` shows the hub's own output.
+`docker logs hub-modern` shows the hub's own output.
 
 ## Security
 
 - **Only Pangolin can reach the hub.** It has no published port, so Pangolin's SSO is the only way to it.
-- **Pangolin's API stays private.** It's only reachable inside Docker, never from the internet.
-- **The API key is read-only.** "List Resources" lets it see service names and hostnames, nothing else, and it can't change anything. Keep it in `.env` (not in git) and delete or replace it in Pangolin any time.
+- **Self-hosted, Pangolin's API stays private.** The hub reaches it inside Docker, so it never needs to face the internet.
+- **The API key is read-only.** "List Resources" lets it see service names and hostnames, nothing else, and it can't change anything. Delete or replace it in Pangolin any time.
+- **Keys stay on the hub.** Connections are saved in `hub.json` in the `hub-data` volume, readable only by the hub's user. The browser only ever sees a key's last four characters.
+- **Only admins change settings.** With `HUB_ADMINS` set, only those Pangolin users see Settings or the edit buttons; the server refuses everyone else's changes too.
 - **Clicking a tile still goes through Pangolin,** so each service's own access rules still apply.
-- **The hub stores nothing.** Pinned tiles live in your browser.
+- **Pins and tile size live in your browser.**
 - **Icons load from jsDelivr,** a public CDN. Set `HUB_ICONS=false` if you'd rather nothing leave your network.
 
 ## Develop
 
 ```sh
 pnpm install
-PANGOLIN_API_URL=https://api.example.com/v1 PANGOLIN_API_KEY=… PANGOLIN_ORG_ID=… pnpm dev
+pnpm dev          # then add a connection in Settings (saved to ./data/hub.json)
 pnpm check && pnpm test
 ```
 

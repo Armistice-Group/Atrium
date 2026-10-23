@@ -1,4 +1,6 @@
 import type { Handle } from '@sveltejs/kit/hooks';
+import { config } from '#lib/server/config.ts';
+import { isAdmin } from '#lib/server/connections.ts';
 
 /**
  * Pangolin signs people in before they reach the hub and passes who they are in Remote-* headers
@@ -11,6 +13,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const email = h.get('remote-email') ?? '';
 	const username = h.get('remote-user') ?? '';
 	event.locals.viewer = name || email || username ? { name, email, username, role: h.get('remote-role') ?? '' } : null;
+	event.locals.admin = isAdmin(event.locals.viewer, config);
 	const res = await resolve(event);
 	res.headers.set('x-frame-options', 'DENY');
 	res.headers.set('referrer-policy', 'same-origin');
