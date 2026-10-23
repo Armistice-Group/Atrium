@@ -1,105 +1,156 @@
-import type { Hub, Service } from '#lib/types.ts';
+import type { Hub, Service, ServiceEdit } from '#lib/types.ts';
 import { config as defaults, type Config } from './config.ts';
+import { allConnections, type Source } from './connections.ts';
 import { readServicesFile, type FileEntry, type ServicesFile } from './file.ts';
 import { iconCatalog, resolveIcon, settleIcons, slugify } from './icons.ts';
 import { healthOf, isWebResource, listResources, type PangolinResource } from './pangolin.ts';
+import { readStore } from './store.ts';
 
 interface Cache {
 	resources: PangolinResource[];
 	at: number;
 	error: string | null;
 	lastGood: number | null;
+	/** URL, key and org the list came from: an edit to any of them starts afresh. */
+	fingerprint: string;
 }
 
-let cache: Cache | null = null;
-let inflight: Promise<Cache> | null = null;
+/** A resource and the connection it came from ("env" keeps the ids pins were saved under before connections). */
+export type Tagged = PangolinResource & { conn?: string };
 
-/** Pangolin's resources, refreshed at most every HUB_REFRESH_SECONDS. A failure keeps the last good list. */
-async function pangolinResources(cfg: Config, f: typeof fetch): Promise<Cache> {
-	if (cache && Date.now() - cache.at < cfg.refreshSeconds * 1000) return cache;
-	inflight ??= (async () => {
+const caches = new Map<string, Cache>();
+const inflight = new Map<string, Promise<Cache>>();
+
+/** One connection's resources, refreshed at most every HUB_REFRESH_SECONDS. A failure keeps the last good list. */
+async function pangolinResources(c: Source, cfg: Config, f: typeof fetch): Promise<Cache> {
+	const fingerprint = `${c.url}\n${c.key}\n${c.org}`;
+	const prev = caches.get(c.id)?.fingerprint === fingerprint ? caches.get(c.id) : undefined;
+	if (prev && Date.now() - prev.at < cfg.refreshSeconds * 1000) return prev;
+	const running = inflight.get(c.id);
+	if (running) return running;
+	const job = (async () => {
+		let next: Cache;
 		try {
-			const resources = await listResources(cfg.pangolinUrl, cfg.pangolinKey, cfg.pangolinOrg, f);
-			cache = { resources, at: Date.now(), error: null, lastGood: Date.now() };
+			const resources = await listResources(c.url, c.key, c.org, f);
+			next = { resources, at: Date.now(), error: null, lastGood: Date.now(), fingerprint };
 		} catch (err) {
-			cache = { resources: cache?.resources ?? [], at: Date.now(), error: (err as Error).message, lastGood: cache?.lastGood ?? null };
+			next = { resources: prev?.resources ?? [], at: Date.now(), error: (err as Error).message, lastGood: prev?.lastGood ?? null, fingerprint };
 		} finally {
-			inflight = null;
+			inflight.delete(c.id);
 		}
-		return cache!;
+		caches.set(c.id, next);
+		return next;
 	})();
-	return inflight;
+	inflight.set(c.id, job);
+	return job;
 }
 
-export function resetCache() {
-	cache = null;
+/** Drops one connection's list (after it's edited or removed), or all of them. */
+export function resetCache(id?: string) {
+	if (id) caches.delete(id);
+	else caches.clear();
+}
+
+/** What the settings page shows next to a connection; null until it's been asked. */
+export function connectionStatus(id: string) {
+	const c = caches.get(id);
+	if (!c) return null;
+	return { error: c.error, lastGood: c.lastGood ? new Date(c.lastGood).toISOString() : null, count: c.resources.filter(isWebResource).length };
 }
 
 const key = (s: string) => s.trim().toLowerCase();
 
-/** Pangolin's services with the file's overrides applied, plus the file's extra links, grouped and sorted. */
+/** Every enabled connection's services with services.yaml and the UI's edits applied, plus the file's extra links. */
 export async function buildHub(cfg: Config = defaults, f: typeof fetch = fetch): Promise<Hub> {
-	const pangolin = !!(cfg.pangolinUrl && cfg.pangolinKey);
-	const [{ file, error: fileError }, p, icons] = await Promise.all([
+	const [{ file, error: fileError }, store, icons] = await Promise.all([
 		readServicesFile(cfg.servicesFile),
-		pangolin ? pangolinResources(cfg, f) : Promise.resolve(null),
+		readStore(cfg.dataDir),
 		cfg.icons ? iconCatalog(f) : Promise.resolve(null)
 	]);
-	const services = assemble(p?.resources ?? [], file, cfg, icons);
+	const connections = (await allConnections(cfg)).filter((c) => c.enabled);
+	const results = await Promise.all(connections.map((c) => pangolinResources(c, cfg, f)));
+	const resources = results.flatMap((r, i) => r.resources.map((res): Tagged => ({ ...res, conn: connections[i].id })));
+	const services = assemble(resources, file, cfg, icons, store.edits, store.groups.renames);
 	await settleIcons(services.map((s) => s.icon), f);
-	const error = p?.error ?? fileError ?? (pangolin ? null : file.entries.length ? null : 'Pangolin isn’t connected: set PANGOLIN_API_URL and PANGOLIN_API_KEY, or list services in services.yaml.');
+	const failures = results.map((r, i) => (r.error ? (connections.length > 1 ? `${connections[i].name}: ${r.error}` : r.error) : null)).filter(Boolean);
+	const pangolin = connections.length > 0;
+	const empty = !pangolin && !file.entries.length;
+	const error = failures.join(' · ') || fileError || (empty ? 'Pangolin isn’t connected yet: add a connection in Settings, or list services in services.yaml.' : null);
+	const goods = results.map((r) => r.lastGood).filter((t): t is number => t !== null);
 	return {
 		title: cfg.title,
 		services,
-		groups: orderGroups(services, file.groups, cfg.defaultGroup),
+		groups: orderGroups(services, store.groups.order.length ? store.groups.order : file.groups, cfg.defaultGroup),
 		error,
-		updatedAt: p?.lastGood ? new Date(p.lastGood).toISOString() : null,
+		updatedAt: goods.length ? new Date(Math.min(...goods)).toISOString() : null,
 		pangolin,
 		newTab: cfg.newTab
 	};
 }
 
-export function assemble(resources: PangolinResource[], file: ServicesFile, cfg: Config, icons: Awaited<ReturnType<typeof iconCatalog>>): Service[] {
+export function assemble(
+	resources: Tagged[],
+	file: ServicesFile,
+	cfg: Config,
+	icons: Awaited<ReturnType<typeof iconCatalog>>,
+	edits: Record<string, ServiceEdit> = {},
+	renames: Record<string, string> = {}
+): Service[] {
+	const regroup = (g: string) => renames[key(g)] ?? g;
 	const overrides = file.entries.filter((e) => e.match);
 	const findOverride = (r: PangolinResource) => overrides.find((o) => [r.name, r.fullDomain ?? '', r.niceId ?? ''].some((v) => v && key(v) === key(o.match!)));
 	const hidden = (name: string, host: string) => cfg.hide.includes(key(name)) || cfg.hide.includes(key(host));
 	const out: Service[] = [];
+	const hosts = new Set<string>();
 
 	for (const r of resources) {
 		if (!isWebResource(r)) continue;
-		const o: FileEntry = findOverride(r) ?? {};
 		const host = r.fullDomain!;
+		// The same hostname from two connections (two keys for one org): show it once.
+		if (hosts.has(key(host))) continue;
+		hosts.add(key(host));
+		const id = !r.conn || r.conn === 'env' ? `p-${r.resourceId}` : `p-${r.conn}-${r.resourceId}`;
+		const e = edits[id] ?? {};
+		const o: FileEntry = findOverride(r) ?? {};
 		const labels = (r.labels ?? []).map((l) => l.name).filter(Boolean);
-		if (o.hidden || labels.some((l) => key(l) === 'hidden') || hidden(r.name, host)) continue;
-		const name = o.name ?? r.name;
+		if (e.hidden || o.hidden || labels.some((l) => key(l) === 'hidden') || hidden(r.name, host)) continue;
+		const name = e.name || o.name || r.name;
 		out.push({
-			id: `p-${r.resourceId}`,
+			id,
 			name,
 			url: o.url ?? `${r.ssl === false ? 'http' : 'https'}://${host}`,
 			host,
-			group: o.group ?? labels[0] ?? cfg.defaultGroup,
-			description: o.description ?? '',
-			icon: resolveIcon(icons, o.icon, name, host, r.niceId),
+			group: regroup(e.group || o.group || labels[0] || cfg.defaultGroup),
+			description: e.description || o.description || '',
+			icon: resolveIcon(icons, e.icon || o.icon, name, host, r.niceId),
 			health: healthOf(r),
-			source: 'pangolin'
+			sites: (r.sites ?? []).filter((x) => x.siteName).map((x) => ({ name: x.siteName!, online: typeof x.online === 'boolean' ? x.online : null })),
+			wide: !!e.wide,
+			source: 'pangolin',
+			edit: edits[id] ?? null
 		});
 	}
 
 	for (const e of file.entries) {
 		if (e.match || !e.url || e.hidden) continue;
 		const host = new URL(e.url).host;
-		const name = e.name ?? host;
-		if (hidden(name, host)) continue;
+		const id = `f-${slugify(e.name ?? host)}-${slugify(host)}`;
+		const ed = edits[id] ?? {};
+		const name = ed.name || e.name || host;
+		if (ed.hidden || hidden(name, host)) continue;
 		out.push({
-			id: `f-${slugify(name)}-${slugify(host)}`,
+			id,
 			name,
 			url: e.url,
 			host,
-			group: e.group ?? cfg.defaultGroup,
-			description: e.description ?? '',
-			icon: resolveIcon(icons, e.icon, name, host),
+			group: regroup(ed.group || e.group || cfg.defaultGroup),
+			description: ed.description || e.description || '',
+			icon: resolveIcon(icons, ed.icon || e.icon, name, host),
 			health: 'unknown',
-			source: 'file'
+			sites: [],
+			wide: !!ed.wide,
+			source: 'file',
+			edit: edits[id] ?? null
 		});
 	}
 	return out.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));

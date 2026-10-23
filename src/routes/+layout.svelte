@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import ConfirmHost from '#lib/components/ConfirmHost.svelte';
 	import Toaster from '#lib/components/Toaster.svelte';
 
 	let { children } = $props();
@@ -9,3 +10,4 @@
 
 {@render children()}
 <Toaster />
+<ConfirmHost />

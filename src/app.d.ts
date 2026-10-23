@@ -5,6 +5,8 @@ declare global {
 	namespace App {
 		interface Locals {
 			viewer: Viewer | null;
+			/** May change connections and tiles (HUB_ADMINS). */
+			admin: boolean;
 		}
 	}
 }

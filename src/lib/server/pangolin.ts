@@ -14,7 +14,8 @@ export interface PangolinResource {
 	/** Older versions: true for HTTP resources. */
 	http?: boolean;
 	health?: string | null;
-	sites?: { siteName?: string; online?: boolean }[];
+	/** One per site the targets are on; `online` is missing for the local site. */
+	sites?: { siteId?: number; siteName?: string; online?: boolean }[];
 	labels?: { name: string; color?: string }[];
 }
 

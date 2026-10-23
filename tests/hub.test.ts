@@ -5,8 +5,14 @@ import { parseServicesFile } from '../src/lib/server/file.ts';
 import { healthOf, isWebResource, listResources, type PangolinResource } from '../src/lib/server/pangolin.ts';
 import { resolveIcon, settleIcons, svgBrightness } from '../src/lib/server/icons.ts';
 import type { Config } from '../src/lib/server/config.ts';
+import { isAdmin, parseConnection } from '../src/lib/server/connections.ts';
+import { forgetStore, readStore, updateStore } from '../src/lib/server/store.ts';
+import { renameGroup } from '../src/lib/server/groups.ts';
+import { mkdtemp, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-const cfg: Config = { pangolinUrl: 'https://api.example.com/v1', pangolinKey: 'k', pangolinOrg: 'home', servicesFile: '', title: 'hub', defaultGroup: 'Services', hide: ['secret.example.com'], refreshSeconds: 60, newTab: true, icons: true };
+const cfg: Config = { pangolinUrl: 'https://api.example.com/v1', pangolinKey: 'k', pangolinOrg: 'home', servicesFile: '', dataDir: '', admins: [], title: 'hub', defaultGroup: 'Services', hide: ['secret.example.com'], refreshSeconds: 60, newTab: true, icons: true };
 const res = (id: number, name: string, fullDomain: string, extra: Partial<PangolinResource> = {}): PangolinResource => ({ resourceId: id, name, fullDomain, ssl: true, enabled: true, mode: 'http', ...extra });
 const catalog = { svg: new Set(['grafana', 'jellyfin', 'github', 'github-dark']), png: new Set(['portainer']), at: Date.now() };
 
@@ -137,4 +143,90 @@ test('icon variants are measured, since their names can mean either theme', asyn
 	assert.match(vault.dark, /vault-light\.svg$/);
 	assert.ok(Math.abs(svgBrightness('<svg><path fill="#ffffff"/><path fill="#000"/></svg>')! - 0.5) < 1e-9);
 	assert.equal(svgBrightness('<svg><text>x</text></svg>'), null);
+});
+
+test('several connections: ids stay apart, and a hostname twice shows once', () => {
+	const services = assemble(
+		[
+			{ ...res(1, 'Grafana', 'grafana.example.com'), conn: 'env' },
+			{ ...res(1, 'Immich', 'photos.example.com'), conn: 'ab12' },
+			{ ...res(9, 'Grafana again', 'GRAFANA.example.com'), conn: 'ab12' }
+		],
+		{ groups: [], entries: [] },
+		cfg,
+		catalog
+	);
+	assert.deepEqual(services.map((s) => s.id).sort(), ['p-1', 'p-ab12-1']);
+});
+
+test('tile edits beat services.yaml, and hidden tiles leave the page', () => {
+	const { file } = parseServicesFile('services:\n  - match: Grafana\n    icon: jellyfin\n    group: Monitoring');
+	const services = assemble(
+		[res(1, 'Grafana', 'grafana.example.com'), res(2, 'Old', 'old.example.com')],
+		file,
+		cfg,
+		catalog,
+		{ 'p-1': { name: 'Graphs', icon: 'https://example.com/g.svg' }, 'p-2': { hidden: true } }
+	);
+	assert.equal(services.length, 1);
+	assert.equal(services[0].name, 'Graphs');
+	assert.equal(services[0].group, 'Monitoring', 'what the edit leaves empty still comes from the file');
+	assert.equal(services[0].icon!.light, 'https://example.com/g.svg');
+	assert.deepEqual(services[0].edit, { name: 'Graphs', icon: 'https://example.com/g.svg' });
+});
+
+test('settings are saved privately and survive a restart', async () => {
+	const dir = await mkdtemp(join(tmpdir(), 'hub-'));
+	forgetStore();
+	await updateStore(dir, (s) => void s.connections.push({ id: 'a', name: 'Cloud', url: 'https://api.pangolin.net/v1', key: 'secret', org: 'home', enabled: true }));
+	await Promise.all([updateStore(dir, (s) => void (s.edits.x = { icon: 'grafana' })), updateStore(dir, (s) => void (s.edits.y = { hidden: true }))]);
+	assert.equal((await stat(join(dir, 'hub.json'))).mode & 0o777, 0o600);
+	forgetStore();
+	const store = await readStore(dir);
+	assert.equal(store.connections[0].key, 'secret');
+	assert.deepEqual(Object.keys(store.edits).sort(), ['x', 'y'], 'saves made together both land');
+});
+
+test('connection forms are checked, and HUB_ADMINS limits who may change them', () => {
+	assert.deepEqual(parseConnection({ url: 'https://api.pangolin.net/v1/', key: 'k' }), { input: { name: 'api.pangolin.net', url: 'https://api.pangolin.net/v1', key: 'k', org: '', enabled: true } });
+	assert.match((parseConnection({ url: 'ftp://x' }) as { error: string }).error, /http/);
+	assert.match((parseConnection({ url: '' }) as { error: string }).error, /URL/);
+	const viewer = { name: 'N', email: 'Me@Example.com', username: 'me', role: '' };
+	assert.equal(isAdmin(null, cfg), true, 'no list: everyone Pangolin lets in');
+	assert.equal(isAdmin(viewer, { ...cfg, admins: ['me@example.com'] }), true);
+	assert.equal(isAdmin({ ...viewer, email: 'other@example.com', username: 'other' }, { ...cfg, admins: ['me@example.com'] }), false);
+	assert.equal(isAdmin(null, { ...cfg, admins: ['me@example.com'] }), false);
+});
+
+test('sites come through with their status; the local site has none', () => {
+	const [s] = assemble(
+		[res(1, 'Grafana', 'grafana.example.com', { sites: [{ siteId: 1, siteName: 'HP', online: true }, { siteId: 2, siteName: 'Local' }, { siteId: 3, siteName: '' }] })],
+		{ groups: [], entries: [] },
+		cfg,
+		catalog
+	);
+	assert.deepEqual(s.sites, [{ name: 'HP', online: true }, { name: 'Local', online: null }]);
+});
+
+test('renaming groups carries their tiles, edits and place along', () => {
+	const s = { connections: [], edits: { a: { group: 'Media' } }, groups: { order: ['Media', 'Tools', 'Network'], renames: {} as Record<string, string> } };
+	renameGroup(s, 'Media', 'Watch');
+	renameGroup(s, 'Watch', 'TV');
+	assert.deepEqual(s.groups.renames, { media: 'TV', watch: 'TV' });
+	assert.equal(s.edits.a.group, 'TV');
+	assert.deepEqual(s.groups.order, ['TV', 'Tools', 'Network']);
+	renameGroup(s, 'Network', 'Tools');
+	assert.deepEqual(s.groups.order, ['TV', 'Tools'], 'merging keeps one place');
+	renameGroup(s, 'TV', 'Media');
+	assert.equal(s.groups.renames.media, undefined, 'renaming back removes the rename');
+
+	const services = assemble(
+		[res(1, 'Jellyfin', 'tv.example.com', { labels: [{ name: 'media' }] }), res(2, 'Plex', 'plex.example.com', { labels: [{ name: 'Watch' }] })],
+		{ groups: [], entries: [] },
+		cfg,
+		catalog,
+		{ 'p-2': { wide: true } },
+		{ media: 'TV' }
+	);
+	assert.deepEqual(services.map((x) => [x.name, x.group, x.wide]), [['Jellyfin', 'TV', false], ['Plex', 'Watch', true]]);
 });

@@ -1,7 +1,7 @@
-# hub·modern, on the same machine as Pangolin. Full walkthrough: README.md → "Set up".
+# hub·modern, on a machine Pangolin can reach. Full walkthrough: README.md → "Set up".
 #
-# The hub has no published port: the only way in is through Pangolin (with SSO), and it talks
-# to Pangolin's API over Docker's internal network, so the API never faces the internet.
+# The hub has no published port: the only way in is through Pangolin (with SSO). Connect it to
+# Pangolin in the hub's Settings page, or with the PANGOLIN_* variables below.
 
 services:
   hub-modern:
@@ -9,21 +9,27 @@ services:
     container_name: hub-modern
     restart: unless-stopped
     environment:
-      # Pangolin's Integration API, reached by container name over the shared network.
-      PANGOLIN_API_URL: http://pangolin:3003/v1
-      # From .env (step 2 of the README). Read-only: "List Resources" permission only.
-      PANGOLIN_API_KEY: ${PANGOLIN_API_KEY:?put PANGOLIN_API_KEY in .env next to this file}
-      # Your org's ID: the first part of the path in Pangolin's dashboard URL (…/<org-id>/settings).
-      PANGOLIN_ORG_ID: ${PANGOLIN_ORG_ID:?put PANGOLIN_ORG_ID in .env next to this file}
+      # Who may open Settings (add connections, edit tiles): emails or usernames from Pangolin's
+      # sign-in, comma-separated. Leave empty and anyone who can open the hub can.
+      HUB_ADMINS: ${HUB_ADMINS:-}
+      # Optional: a connection set here instead of in Settings (shown there as "From environment").
+      PANGOLIN_API_URL: ${PANGOLIN_API_URL:-}
+      PANGOLIN_API_KEY: ${PANGOLIN_API_KEY:-}
+      PANGOLIN_ORG_ID: ${PANGOLIN_ORG_ID:-}
     volumes:
+      # Connections and tile edits made in the UI (hub.json, readable only by the hub).
+      - hub-data:/data
       # Optional extras: links that aren't in Pangolin, icon and group overrides.
       - ./services.yaml:/data/services.yaml:ro
     networks:
       - pangolin
 
+volumes:
+  hub-data:
+
 networks:
   pangolin:
-    # Pangolin's Docker network. Newer installs call it pangolin_frontend, older ones pangolin:
-    # step 3 of the README shows how to check; PANGOLIN_NETWORK in .env overrides it.
+    # The Docker network Pangolin (self-hosted) or Newt (Pangolin Cloud) is on, so it can reach the
+    # hub as hub-modern:3000. Step 2 of the README shows how to find it; set PANGOLIN_NETWORK in .env.
     name: ${PANGOLIN_NETWORK:-pangolin_frontend}
     external: true

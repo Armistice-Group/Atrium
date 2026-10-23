@@ -3,5 +3,5 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('hub:services');
-	return { hub: await buildHub(), viewer: locals.viewer };
+	return { hub: await buildHub(), viewer: locals.viewer, admin: locals.admin };
 };
