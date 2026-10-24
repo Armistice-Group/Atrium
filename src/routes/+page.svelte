@@ -16,7 +16,7 @@
 	let input: HTMLInputElement;
 	let pins = $state<string[]>([]);
 	let greeting = $state('Hello');
-	let size = $state<Size>('medium');
+	let size = $state<Size>('large');
 	const large = $derived(size === 'large');
 	let editing = $state<Service | null>(null);
 	let groupBy = $state<'label' | 'site'>('label');
@@ -29,7 +29,7 @@
 		try {
 			pins = JSON.parse(localStorage.getItem('hub-pins') ?? '[]');
 			const saved = localStorage.getItem('hub-size');
-			size = saved === 'small' || saved === 'large' ? saved : 'medium';
+			size = saved === 'small' || saved === 'medium' ? saved : 'large';
 			groupBy = localStorage.getItem('hub-group') === 'site' ? 'site' : 'label';
 		} catch {}
 		// Status dots and new services show up without a reload.
@@ -155,9 +155,10 @@
 	const HEALTH_LABEL: Record<Health, string> = { healthy: 'Up', degraded: 'Degraded', unhealthy: 'Down', unknown: '' };
 	const firstName = $derived((data.viewer?.name || data.viewer?.username || '').split(/\s+/)[0]);
 	const GRID: Record<Size, string> = {
-		small: 'grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6',
-		medium: 'grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
-		large: 'grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+		small: 'grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6',
+		medium: 'grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4',
+		// App-launcher tiles, like Authentik or Okta: as many ~10rem columns as fit, with room around each.
+		large: 'grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] gap-4 sm:gap-6'
 	};
 	// Medium is one column on phones, where a wide tile has nothing to span.
 	const WIDE: Record<Size, string> = { small: 'col-span-2', medium: 'sm:col-span-2', large: 'col-span-2' };
@@ -177,7 +178,7 @@
 			target={hub.newTab ? '_blank' : undefined}
 			rel="noopener"
 			class="card flex min-w-0 transition-all hover:-translate-y-px hover:bg-accent/60 hover:shadow-surface-lg focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none {large
-				? 'flex-col items-center gap-3 px-4 pt-6 pb-5 text-center'
+				? 'flex-col items-center gap-3.5 px-4 pt-7 pb-6 text-center'
 				: size === 'small'
 					? 'items-center gap-2.5 p-2'
 					: 'items-center gap-3 p-3'} {active ? 'ring-2 ring-primary/60' : ''}"
@@ -265,7 +266,7 @@
 
 {#snippet section(title: string, services: Service[], online: boolean | null = null)}
 	<section>
-		<h2 class="mb-2.5 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+		<h2 class="mb-4 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 			{#if groupBy === 'site'}{@render siteDot(online)}{/if}{title}<span class="font-mono font-normal text-muted-foreground/70">{services.length}</span>
 			{#if groupBy === 'site' && online === false}<span class="font-normal tracking-normal text-danger normal-case">offline</span>{/if}
 		</h2>
@@ -303,10 +304,10 @@
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-6xl space-y-8 px-4 pt-8 pb-16 sm:px-6">
+	<main class="mx-auto max-w-6xl space-y-10 px-4 pt-8 pb-16 sm:px-6">
 		{#if query.trim()}
 			<section>
-				<h2 class="mb-2.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+				<h2 class="mb-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 					{results.length ? `${results.length} ${results.length === 1 ? 'match' : 'matches'}` : 'No matches'}{#if activeSite}{` on ${activeSite}`}<button class="ml-2 font-normal tracking-normal text-primary normal-case hover:underline" onclick={() => (siteFilter = null)}>search all sites</button>{/if}
 					{#if results.length}<span class="ml-2 font-normal tracking-normal normal-case">↵ to open, ↑↓ to choose</span>{/if}
 				</h2>
@@ -324,7 +325,7 @@
 				</div>
 			</div>
 
-			<div class="-mt-3 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+			<div class="-mt-5 flex flex-wrap items-center gap-x-4 gap-y-2.5">
 				{#if sites.length > 1}
 					<div class="flex flex-wrap gap-1.5" role="group" aria-label="Show one site">
 						{@render chip('All', null, hub.services.length, null)}
