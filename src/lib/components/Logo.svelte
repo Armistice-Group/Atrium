@@ -17,9 +17,9 @@
 	</defs>
 	<rect width="32" height="32" rx="9" fill="url(#{id}-fill)" />
 	<rect width="32" height="32" rx="9" fill="url(#{id}-sheen)" />
-	<!-- A launcher: four app tiles, the first one lit. -->
-	<rect x="7" y="7" width="8" height="8" rx="2.2" fill="#fff" />
-	<rect x="17" y="7" width="8" height="8" rx="2.2" fill="#fff" fill-opacity="0.72" />
-	<rect x="7" y="17" width="8" height="8" rx="2.2" fill="#fff" fill-opacity="0.72" />
-	<rect x="17" y="17" width="8" height="8" rx="2.2" fill="#fff" fill-opacity="0.45" />
+	<!-- A pinwheel of app tiles turning around an open centre: the hub. -->
+	<rect x="6" y="6" width="11" height="7" rx="2" fill="#fff" />
+	<rect x="19" y="6" width="7" height="11" rx="2" fill="#fff" fill-opacity="0.78" />
+	<rect x="15" y="19" width="11" height="7" rx="2" fill="#fff" fill-opacity="0.56" />
+	<rect x="6" y="15" width="7" height="11" rx="2" fill="#fff" fill-opacity="0.36" />
 </svg>
