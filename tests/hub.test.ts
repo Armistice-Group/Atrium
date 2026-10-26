@@ -121,6 +121,13 @@ test('icons match by name, then hostname, with dark-mode variants', () => {
 	assert.equal(resolveIcon(null, undefined, 'Grafana', 'grafana.example.com'), null);
 });
 
+test('our own apps use the logos bundled with the hub, even with no catalog', () => {
+	assert.equal(resolveIcon(catalog, undefined, 'Debrief', 'debrief.example.com')!.light, '/icons/debrief.svg');
+	assert.equal(resolveIcon(null, undefined, 'Warden station', 'w.example.com')!.light, '/icons/warden.png');
+	assert.deepEqual(resolveIcon(null, undefined, 'Time', 'time.armgrp.dev'), { light: '/icons/consultainer.svg', dark: '/icons/consultainer-dark.svg' });
+	assert.equal(resolveIcon(null, 'Consultainer', 'Billing', 'billing.example.com')!.dark, '/icons/consultainer-dark.svg');
+});
+
 test('icon variants are measured, since their names can mean either theme', async () => {
 	const svgs: Record<string, string> = {
 		'github.svg': '<svg><path d="M0 0"/></svg>',

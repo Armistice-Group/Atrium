@@ -1,3 +1,4 @@
+import { bundledIcon, bundledIconForHost } from '#lib/bundled-icons.ts';
 import type { Icon } from '#lib/types.ts';
 
 /** Icons from homarr-labs/dashboard-icons (https://github.com/homarr-labs/dashboard-icons), served by jsDelivr. */
@@ -111,19 +112,22 @@ export async function settleIcons(icons: (Icon | null)[], f: typeof fetch = fetc
 }
 
 /**
- * An explicit icon (a URL, or a dashboard-icons name), else the first name that matches:
+ * An explicit icon (a URL, or a bundled or dashboard-icons name), else the first name that matches:
  * the service name, then each part of its hostname ("grafana" in grafana.example.com).
+ * Bundled icons come first and need no catalog, since they're served by the hub itself.
  */
 export function resolveIcon(c: Catalog | null, explicit: string | undefined, name: string, host: string, niceId?: string): Icon | null {
 	if (explicit) {
 		if (/^(https?:)?\/\//.test(explicit) || explicit.startsWith('/')) return { light: explicit, dark: explicit };
-		return c ? fromCatalog(c, slugify(explicit)) : null;
+		const slug = slugify(explicit);
+		return bundledIcon(slug) ?? (c ? fromCatalog(c, slug) : null);
 	}
-	if (!c) return null;
 	const words = slugify(name);
-	const candidates = [words, words.replace(/-/g, ''), words.split('-')[0], niceId ? slugify(niceId) : '', ...host.split('.').slice(0, -2).map(slugify)];
+	const candidates = [words, words.replace(/-/g, ''), words.split('-')[0], niceId ? slugify(niceId) : '', ...host.split('.').slice(0, -2).map(slugify)].filter(Boolean);
+	const own = bundledIconForHost(host) ?? candidates.map(bundledIcon).find(Boolean);
+	if (own) return own;
+	if (!c) return null;
 	for (const slug of candidates) {
-		if (!slug) continue;
 		const icon = fromCatalog(c, slug);
 		if (icon) return icon;
 	}
