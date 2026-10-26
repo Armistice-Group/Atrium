@@ -1,3 +1,5 @@
+import { bundledIcon } from '#lib/bundled-icons.ts';
+
 /** Calls one of the hub's JSON endpoints; throws with the server's message when it says no. */
 export async function send<T = { ok: true }>(method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<T> {
 	const res = await fetch(url, {
@@ -19,5 +21,7 @@ export function iconCandidates(value: string): string[] {
 	if (!v) return [];
 	if (/^(https?:)?\/\//i.test(v) || v.startsWith('/')) return [v];
 	const slug = v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+	const own = bundledIcon(slug);
+	if (own) return [own.light];
 	return [`${CDN}/svg/${slug}.svg`, `${CDN}/png/${slug}.png`];
 }
