@@ -1,4 +1,4 @@
-# hub·modern, on a machine Pangolin can reach. Full walkthrough: README.md → "Set up".
+# Atrium, on a machine Pangolin can reach. Full walkthrough: README.md → "Set up".
 #
 # The hub has no published port: the only way in is through Pangolin (with SSO). Connect it to
 # Pangolin in the hub's Settings page, or with the PANGOLIN_* variables below.

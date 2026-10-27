@@ -4,46 +4,46 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
-/* Palette follows Arcane: a violet primary (hue 292) over faintly violet-tinted neutrals. */
+/* Graphite: an ink primary over zinc neutrals, so the apps' own colourful icons carry the page. */
 :root {
-	--background: oklch(99% 0.005 292);
+	--background: oklch(99% 0.005 286);
 	--foreground: oklch(14.5% 0 0);
 	--card: oklch(100% 0 0);
 	--card-foreground: oklch(14.5% 0 0);
-	--surface: oklch(97.5% 0.006 292);
-	--muted: oklch(96% 0.005 292);
-	--muted-foreground: oklch(52% 0.01 292);
-	--accent: oklch(94% 0.02 292);
+	--surface: oklch(97.5% 0.006 286);
+	--muted: oklch(96% 0.005 286);
+	--muted-foreground: oklch(52% 0.006 286);
+	--accent: oklch(94% 0.006 286);
 	--accent-foreground: oklch(20.5% 0 0);
-	--border: oklch(90% 0.01 292);
-	--input: oklch(88% 0.012 292);
-	--primary: oklch(58% 0.26 292.717);
+	--border: oklch(90% 0.006 286);
+	--input: oklch(88% 0.006 286);
+	--primary: oklch(21% 0.006 286);
 	--primary-foreground: oklch(98.5% 0 0);
-	--primary-soft: oklch(58% 0.26 292.717 / 0.1);
+	--primary-soft: oklch(21% 0.006 286 / 0.07);
 	--success: oklch(60% 0.15 155);
 	--warning: oklch(70% 0.16 70);
 	--danger: oklch(58% 0.22 25);
-	/* Filled primary buttons: a muted violet with depth, calmer than --primary (used for accents). */
-	--primary-solid-top: oklch(54% 0.18 292);
-	--primary-solid-bottom: oklch(48% 0.18 292);
-	--primary-solid-edge: oklch(42% 0.15 292);
+	/* Filled primary buttons: ink with a little depth; near-white in dark mode. */
+	--primary-solid-top: oklch(32% 0.006 286);
+	--primary-solid-bottom: oklch(22% 0.006 286);
+	--primary-solid-edge: oklch(15% 0.005 286);
 	/* Filled danger buttons: the same depth as primary, in red. */
 	--danger-solid-top: oklch(57% 0.19 25);
 	--danger-solid-bottom: oklch(51% 0.19 25);
 	--danger-solid-edge: oklch(44% 0.16 25);
 	/* Outlined (secondary) buttons: a faint raised surface with a visible edge. */
 	--secondary-top: oklch(100% 0 0);
-	--secondary-bottom: oklch(97% 0.005 292);
-	--secondary-edge: oklch(85% 0.014 292);
+	--secondary-bottom: oklch(97% 0.005 286);
+	--secondary-edge: oklch(85% 0.006 286);
 	--secondary-highlight: oklch(100% 0 0 / 0.8);
 	--ring: var(--primary);
-	--glow: oklch(65% 0.24 292.717 / 0.12);
+	--glow: oklch(55% 0.01 286 / 0.08);
 	--shadow: 0 1px 3px 0 oklch(0% 0 0 / 0.06), 0 1px 2px -1px oklch(0% 0 0 / 0.06);
-	--shadow-lg: 0 12px 32px -8px oklch(30% 0.05 292 / 0.18), 0 2px 6px oklch(0% 0 0 / 0.05);
+	--shadow-lg: 0 12px 32px -8px oklch(25% 0.006 286 / 0.16), 0 2px 6px oklch(0% 0 0 / 0.05);
 	--syntax-keyword: oklch(52% 0.22 292);
 	--syntax-string: oklch(52% 0.13 155);
 	--syntax-number: oklch(58% 0.16 50);
-	--syntax-comment: oklch(62% 0.01 292);
+	--syntax-comment: oklch(62% 0.006 286);
 	--syntax-type: oklch(55% 0.13 230);
 	--syntax-function: oklch(55% 0.15 320);
 	/* Temperature chart series (validated for CVD separation on both surfaces). */
@@ -55,40 +55,40 @@
 }
 
 :root[data-theme='dark'] {
-	--background: oklch(12% 0.01 292);
+	--background: oklch(12% 0.006 286);
 	--foreground: oklch(98.5% 0 0);
-	--card: oklch(14.5% 0.012 292);
+	--card: oklch(14.5% 0.006 286);
 	--card-foreground: oklch(98.5% 0 0);
-	--surface: oklch(13.2% 0.011 292);
-	--muted: oklch(18% 0.01 292);
-	--muted-foreground: oklch(64% 0.012 292);
-	--accent: oklch(20% 0.02 292);
+	--surface: oklch(13.2% 0.006 286);
+	--muted: oklch(18% 0.006 286);
+	--muted-foreground: oklch(64% 0.006 286);
+	--accent: oklch(20% 0.006 286);
 	--accent-foreground: oklch(98.5% 0 0);
-	--border: oklch(22% 0.012 292);
-	--input: oklch(25% 0.014 292);
-	--primary: oklch(65% 0.24 292.717);
-	--primary-foreground: oklch(98.5% 0 0);
-	--primary-soft: oklch(65% 0.24 292.717 / 0.14);
-	--primary-solid-top: oklch(54% 0.15 292);
-	--primary-solid-bottom: oklch(47% 0.15 292);
-	--primary-solid-edge: oklch(40% 0.12 292);
+	--border: oklch(22% 0.006 286);
+	--input: oklch(25% 0.006 286);
+	--primary: oklch(96.7% 0.001 286);
+	--primary-foreground: oklch(21% 0.006 286);
+	--primary-soft: oklch(96.7% 0.001 286 / 0.1);
+	--primary-solid-top: oklch(97% 0.001 286);
+	--primary-solid-bottom: oklch(88% 0.004 286);
+	--primary-solid-edge: oklch(70% 0.006 286);
 	--danger-solid-top: oklch(55% 0.17 25);
 	--danger-solid-bottom: oklch(48% 0.17 25);
 	--danger-solid-edge: oklch(41% 0.14 25);
-	--secondary-top: oklch(23% 0.014 292);
-	--secondary-bottom: oklch(19.5% 0.012 292);
-	--secondary-edge: oklch(31% 0.016 292);
+	--secondary-top: oklch(23% 0.006 286);
+	--secondary-bottom: oklch(19.5% 0.006 286);
+	--secondary-edge: oklch(31% 0.006 286);
 	--secondary-highlight: oklch(100% 0 0 / 0.06);
 	--success: oklch(72% 0.17 155);
 	--warning: oklch(80% 0.15 75);
 	--danger: oklch(68% 0.2 25);
-	--glow: oklch(60% 0.26 292.717 / 0.2);
+	--glow: oklch(80% 0.01 286 / 0.07);
 	--shadow: 0 1px 3px 0 oklch(0% 0 0 / 0.3), 0 1px 2px -1px oklch(0% 0 0 / 0.3);
 	--shadow-lg: 0 16px 40px -12px oklch(0% 0 0 / 0.6), 0 0 0 1px oklch(100% 0 0 / 0.02);
 	--syntax-keyword: oklch(75% 0.17 292);
 	--syntax-string: oklch(80% 0.13 155);
 	--syntax-number: oklch(82% 0.12 60);
-	--syntax-comment: oklch(52% 0.015 292);
+	--syntax-comment: oklch(52% 0.006 286);
 	--syntax-type: oklch(78% 0.1 220);
 	--syntax-function: oklch(78% 0.13 330);
 	--series-1: #e8590c;
@@ -169,6 +169,10 @@
 	}
 	.btn-primary:hover {
 		filter: brightness(1.08);
+	}
+	/* Near-white buttons can't get brighter, so they dim instead. */
+	[data-theme='dark'] .btn-primary:hover {
+		filter: brightness(0.94);
 	}
 	.btn-secondary {
 		@apply text-foreground hover:text-primary;

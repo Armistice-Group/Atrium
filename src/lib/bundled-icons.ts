@@ -10,8 +10,9 @@ export const BUNDLED_ICONS: Record<string, Icon & { hosts?: string[] }> = {
 	// A dark tile in light mode and a light one in dark mode, like Consultainer's own mark.
 	consultainer: { light: '/icons/consultainer.svg', dark: '/icons/consultainer-dark.svg', hosts: ['time.armgrp.dev'] },
 	warden: { light: '/icons/warden.png', dark: '/icons/warden.png' },
-	// The hub's own pinwheel, for a tile that points back at the hub itself.
-	hub: { light: '/favicon.svg', dark: '/favicon.svg', hosts: ['hub.armgrp.dev'] },
+	// Atrium's own mark, for a tile that points back at the hub itself. It was hub·modern before.
+	atrium: { light: '/favicon.svg', dark: '/favicon.svg', hosts: ['hub.armgrp.dev'] },
+	hub: { light: '/favicon.svg', dark: '/favicon.svg' },
 	'hub-modern': { light: '/favicon.svg', dark: '/favicon.svg' },
 	lanthorn: { light: '/icons/lanthorn.svg', dark: '/icons/lanthorn.svg' },
 	// Orbital's mark, under each name it has gone by.
