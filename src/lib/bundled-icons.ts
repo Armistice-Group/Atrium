@@ -5,7 +5,8 @@ import type { Icon } from '#lib/types.ts';
  * Matched before dashboard-icons, by name ("Debrief"), as an icon field value ("debrief") or by host.
  */
 export const BUNDLED_ICONS: Record<string, Icon & { hosts?: string[] }> = {
-	debrief: { light: '/icons/debrief.svg', dark: '/icons/debrief.svg' },
+	// Debrief's bars take lighter shades in dark mode, as they do in Debrief itself.
+	debrief: { light: '/icons/debrief.svg', dark: '/icons/debrief-dark.svg' },
 	// A dark tile in light mode and a light one in dark mode, like Consultainer's own mark.
 	consultainer: { light: '/icons/consultainer.svg', dark: '/icons/consultainer-dark.svg', hosts: ['time.armgrp.dev'] },
 	warden: { light: '/icons/warden.png', dark: '/icons/warden.png' },
@@ -13,10 +14,12 @@ export const BUNDLED_ICONS: Record<string, Icon & { hosts?: string[] }> = {
 	hub: { light: '/favicon.svg', dark: '/favicon.svg', hosts: ['hub.armgrp.dev'] },
 	'hub-modern': { light: '/favicon.svg', dark: '/favicon.svg' },
 	lanthorn: { light: '/icons/lanthorn.svg', dark: '/icons/lanthorn.svg' },
-	// The lab's orbit mark, under each name it goes by.
-	'cc-lab': { light: '/icons/cc-lab.svg', dark: '/icons/cc-lab.svg' },
-	'claude-lab': { light: '/icons/cc-lab.svg', dark: '/icons/cc-lab.svg' },
-	orbit: { light: '/icons/cc-lab.svg', dark: '/icons/cc-lab.svg' }
+	// Orbital's mark, under each name it has gone by.
+	orbital: { light: '/icons/orbital.svg', dark: '/icons/orbital.svg' },
+	orbit: { light: '/icons/orbital.svg', dark: '/icons/orbital.svg' },
+	'cc-lab': { light: '/icons/orbital.svg', dark: '/icons/orbital.svg' },
+	'claude-lab': { light: '/icons/orbital.svg', dark: '/icons/orbital.svg' },
+	'cc-modern': { light: '/icons/orbital.svg', dark: '/icons/orbital.svg' }
 };
 
 export function bundledIcon(slug: string): Icon | null {
