@@ -1,10 +1,10 @@
 <p align="center"><img src="static/favicon.svg" width="64" height="64" alt=""></p>
 
-<h1 align="center">hub·modern</h1>
+<h1 align="center">Atrium</h1>
 
 <p align="center">One page with every service behind your <a href="https://github.com/fosrl/pangolin">Pangolin</a>, so you never have to remember a URL again.</p>
 
-hub·modern asks Pangolin which web services you have and shows them as tiles with icons and up/down status. Add a resource in Pangolin and it appears on the page; there's no list to keep up to date. Start typing anywhere to search, press ↵ to open, and star the ones you use most.
+Atrium asks Pangolin which web services you have and shows them as tiles with icons and up/down status. Add a resource in Pangolin and it appears on the page; there's no list to keep up to date. Start typing anywhere to search, press ↵ to open, and star the ones you use most.
 
 ---
 
@@ -193,7 +193,7 @@ All optional, in `compose.yaml` under `environment:`.
 | Variable | Default | What it does |
 | --- | --- | --- |
 | `HUB_ADMINS` | | Emails or usernames (from Pangolin's sign-in) who may open Settings and edit tiles, comma-separated. Empty: anyone who can open the hub. |
-| `HUB_TITLE` | `hub·modern` | The browser tab's title |
+| `HUB_TITLE` | `Atrium` | The browser tab's title |
 | `HUB_DEFAULT_GROUP` | `Services` | Group for resources without a label |
 | `HUB_HIDE` | | Names or hostnames to leave out, comma-separated (like the `hidden` label) |
 | `HUB_NEW_TAB` | `true` | Open services in a new tab. ⌘/Ctrl-click does the opposite. |
