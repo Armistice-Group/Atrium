@@ -4,8 +4,9 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="color-scheme" content="dark light" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+		<!-- The version makes browsers drop a cached icon after an update; they keep favicons through reloads. -->
+		<link rel="icon" href="%sveltekit.assets%/favicon.svg?v=%sveltekit.version%" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png?v=%sveltekit.version%" />
 		<script>
 			try {
 				const t = localStorage.getItem('hub-theme');
