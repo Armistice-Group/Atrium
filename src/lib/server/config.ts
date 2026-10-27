@@ -17,7 +17,7 @@ export const config = {
 		.split(',')
 		.map((s) => s.trim().toLowerCase())
 		.filter(Boolean),
-	title: env.HUB_TITLE || 'hub·modern',
+	title: env.HUB_TITLE || 'Atrium',
 	/** Group for services without a Pangolin label. */
 	defaultGroup: env.HUB_DEFAULT_GROUP || 'Services',
 	/** Names or hosts never shown (comma-separated), on top of the Pangolin label "hidden". */

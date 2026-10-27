@@ -70,7 +70,7 @@
 			<a href="/" class="btn btn-ghost btn-icon -ml-2" title="Back to the hub" aria-label="Back to the hub"><ArrowLeft /></a>
 			<a href="/" class="flex items-center gap-2.5">
 				<Logo size={26} />
-				<span class="text-[0.9375rem] font-semibold tracking-tight">hub<span class="text-primary">·</span>modern</span>
+				<span class="text-[0.9375rem] font-semibold tracking-tight">Atrium</span>
 			</a>
 			<button class="btn btn-ghost btn-icon ml-auto" title="Switch theme" aria-label="Switch theme" onclick={() => setTheme(theme.value === 'dark' ? 'light' : 'dark')}>
 				{#if theme.value === 'dark'}<Sun />{:else}<Moon />{/if}

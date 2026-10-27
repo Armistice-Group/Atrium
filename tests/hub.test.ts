@@ -131,6 +131,7 @@ test('our own apps use the logos bundled with the hub, even with no catalog', ()
 	assert.equal(resolveIcon(null, undefined, 'Claude Lab', 'lab.example.com')!.dark, '/icons/orbital.svg');
 	assert.equal(resolveIcon(null, undefined, 'Orbit', 'lab.example.com')!.light, '/icons/orbital.svg');
 	assert.equal(resolveIcon(null, 'cc-modern', 'Lab', 'lab.example.com')!.light, '/icons/orbital.svg');
+	assert.equal(resolveIcon(null, undefined, 'Atrium', 'home.example.com')!.light, '/favicon.svg');
 	assert.equal(resolveIcon(null, undefined, 'Hub', 'hub.armgrp.dev')!.light, '/favicon.svg');
 	assert.equal(resolveIcon(null, undefined, 'Start page', 'hub.armgrp.dev')!.light, '/favicon.svg');
 	assert.equal(resolveIcon(null, undefined, 'hub·modern', 'home.example.com')!.light, '/favicon.svg');

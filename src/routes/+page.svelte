@@ -294,7 +294,7 @@
 		<div class="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
 			<a href="/" class="flex items-center gap-2.5">
 				<Logo size={26} />
-				<span class="hidden text-[0.9375rem] font-semibold tracking-tight sm:inline">hub<span class="text-primary">·</span>modern</span>
+				<span class="hidden text-[0.9375rem] font-semibold tracking-tight sm:inline">Atrium</span>
 			</a>
 			<label class="relative mx-auto w-full max-w-md">
 				<Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
