@@ -13,7 +13,7 @@ Atrium asks Pangolin which web services you have and shows them as tiles with ic
 You need: Pangolin (self-hosted, or [Pangolin Cloud](https://pangolin.net) with a Newt site), a machine running Docker that Pangolin can reach, and about ten minutes.
 
 ```
-you ──► Pangolin (SSO) ──► hub-modern ──► Pangolin's API (read-only key)
+you ──► Pangolin (SSO) ──► atrium ──► Pangolin's API (read-only key)
 ```
 
 - **Pangolin's SSO is the only way to reach the hub.** The hub has no port of its own on the machine.
@@ -24,7 +24,7 @@ you ──► Pangolin (SSO) ──► hub-modern ──► Pangolin's API (read
 In Pangolin's dashboard (self-hosted or Cloud):
 
 1. Open your organisation, then **API Keys** in the left menu → **Create API Key**.
-2. Name it `hub-modern`.
+2. Name it `atrium`.
 3. Under permissions, tick **only "List Resources"**.
 4. Create it and **copy the key now**. Pangolin shows it once.
 
@@ -38,7 +38,7 @@ Also note your **organisation ID**: the first part of the path in the address ba
 
 ### Step 2. Find the Docker network Pangolin uses to reach the hub
 
-The hub joins the Docker network of whatever forwards traffic to it, so it can be reached as `hub-modern:3000`:
+The hub joins the Docker network of whatever forwards traffic to it, so it can be reached as `atrium:3000`:
 
 - **Self-hosted:** the `pangolin` container's network.
 - **Pangolin Cloud:** your **Newt** container's network (the site connector on this machine).
@@ -53,8 +53,8 @@ If it prints `pangolin_frontend`, there's nothing to do. Otherwise put `PANGOLIN
 ### Step 3. Start the hub
 
 ```sh
-mkdir -p ~/hub-modern && cd ~/hub-modern
-curl -fsSLO https://raw.githubusercontent.com/Armistice-Group/hub-modern/main/compose.yaml
+mkdir -p ~/atrium && cd ~/atrium
+curl -fsSLO https://raw.githubusercontent.com/Armistice-Group/Atrium/main/compose.yaml
 touch services.yaml
 cat > .env <<'ENV'
 HUB_ADMINS=you@example.com
@@ -74,7 +74,7 @@ In Pangolin's dashboard, **Resources → Add Resource**:
 | Type | HTTP |
 | Subdomain | whatever you like, e.g. `hub` → `hub.yourdomain` |
 | Site | the site on the machine running the hub (self-hosted: the **local** site) |
-| Target | `hub-modern`, port `3000`, method `http` |
+| Target | `atrium`, port `3000`, method `http` |
 
 Then, on the new resource's **Authentication** tab, make sure **Use Platform SSO** is on and allow **only your account**.
 
@@ -203,8 +203,20 @@ All optional, in `compose.yaml` under `environment:`.
 ## Updating
 
 ```sh
-cd ~/hub-modern && docker compose pull && docker compose up -d
+cd ~/atrium && docker compose pull && docker compose up -d
 ```
+
+### Moving from hub-modern
+
+Atrium used to be hub-modern. The old `ghcr.io/armistice-group/hub-modern` image no longer gets updates. To switch over, stay in the old folder so the hub keeps its data volume, fetch the new `compose.yaml`, and start it:
+
+```sh
+cd ~/hub-modern
+curl -fsSLO https://raw.githubusercontent.com/Armistice-Group/Atrium/main/compose.yaml
+docker compose pull && docker compose up -d --remove-orphans
+```
+
+`--remove-orphans` stops the old `hub-modern` container. The new one still answers to `hub-modern` on Pangolin's network, so the resource's target can stay as it is, or you can change it to `atrium`.
 
 ## Troubleshooting
 
@@ -219,7 +231,7 @@ The page shows a banner when something's wrong, and Settings shows each connecti
 | *Settings* gives a 403 | You're not in `HUB_ADMINS`: check the email Pangolin signs you in with |
 | *Docker says network … not found* | `PANGOLIN_NETWORK` in `.env` doesn't match step 2 |
 
-`docker logs hub-modern` shows the hub's own output.
+`docker logs atrium` shows the hub's own output.
 
 ## Security
 

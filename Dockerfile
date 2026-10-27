@@ -11,7 +11,7 @@ ENV HUB_VERSION=$HUB_VERSION
 RUN pnpm build && pnpm prune --prod
 
 FROM node:26-alpine
-LABEL org.opencontainers.image.source=https://github.com/Armistice-Group/hub-modern
+LABEL org.opencontainers.image.source=https://github.com/Armistice-Group/Atrium
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000
