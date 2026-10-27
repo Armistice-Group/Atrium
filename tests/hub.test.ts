@@ -126,6 +126,10 @@ test('our own apps use the logos bundled with the hub, even with no catalog', ()
 	assert.equal(resolveIcon(null, undefined, 'Warden station', 'w.example.com')!.light, '/icons/warden.png');
 	assert.deepEqual(resolveIcon(null, undefined, 'Time', 'time.armgrp.dev'), { light: '/icons/consultainer.svg', dark: '/icons/consultainer-dark.svg' });
 	assert.equal(resolveIcon(null, 'Consultainer', 'Billing', 'billing.example.com')!.dark, '/icons/consultainer-dark.svg');
+	assert.equal(resolveIcon(null, undefined, 'CC-Lab', 'lab.example.com')!.light, '/icons/cc-lab.svg');
+	assert.equal(resolveIcon(null, undefined, 'Claude Lab', 'lab.example.com')!.dark, '/icons/cc-lab.svg');
+	assert.equal(resolveIcon(null, undefined, 'Orbit', 'lab.example.com')!.light, '/icons/cc-lab.svg');
+	assert.equal(resolveIcon(null, undefined, 'Lanthorn', 'status.example.com')!.light, '/icons/lanthorn.svg');
 });
 
 test('icon variants are measured, since their names can mean either theme', async () => {
