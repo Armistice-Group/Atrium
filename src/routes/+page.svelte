@@ -177,13 +177,14 @@
 			href={s.url}
 			target={hub.newTab ? '_blank' : undefined}
 			rel="noopener"
-			class="card flex min-w-0 transition-all hover:-translate-y-px hover:bg-accent/60 hover:shadow-surface-lg focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none {large
+			class="card relative flex min-w-0 transition-all hover:-translate-y-px hover:bg-accent/60 hover:shadow-surface-lg focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none {large
 				? 'flex-col items-center gap-3.5 px-4 pt-7 pb-6 text-center'
 				: size === 'small'
 					? 'items-center gap-2.5 p-2'
 					: 'items-center gap-3 p-3'} {active ? 'ring-2 ring-primary/60' : ''}"
 			title={s.description || s.url}
 		>
+			{#if s.health !== 'unknown'}<span class="status-glow status-{s.health}" aria-hidden="true"></span>{/if}
 			{#if large}
 				<ServiceIcon service={s} size="size-16" large />
 				<span class="w-full min-w-0">
