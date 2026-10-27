@@ -196,7 +196,7 @@ All optional, in `compose.yaml` under `environment:`.
 | `HUB_TITLE` | `hub·modern` | The browser tab's title |
 | `HUB_DEFAULT_GROUP` | `Services` | Group for resources without a label |
 | `HUB_HIDE` | | Names or hostnames to leave out, comma-separated (like the `hidden` label) |
-| `HUB_NEW_TAB` | `true` | Open services in a new tab. ⌘/Ctrl-click does the opposite. |
+| `HUB_NEW_TAB` | `true` | Open services in a new tab, until someone picks otherwise with *Open in* above the tiles (remembered per browser). ⌘/Ctrl-click does the opposite. |
 | `HUB_REFRESH_SECONDS` | `60` | How often it asks Pangolin for changes |
 | `HUB_ICONS` | `true` | Set `false` for letter tiles only (nothing loaded from the icon CDN) |
 
