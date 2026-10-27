@@ -256,12 +256,48 @@
 	.glow-top {
 		background-image: radial-gradient(50% 60% at 50% 0, var(--glow), transparent 70%);
 	}
+	/* A tile's edge glows with its health: steady when up, breathing when it needs a look. */
+	.status-glow {
+		@apply pointer-events-none absolute -inset-px rounded-[inherit];
+		--tone: transparent;
+		box-shadow:
+			0 0 0 1px color-mix(in oklch, var(--tone) 55%, transparent),
+			0 0 18px -4px color-mix(in oklch, var(--tone) 45%, transparent);
+	}
+	.status-healthy {
+		--tone: var(--success);
+		opacity: 0.6;
+	}
+	.status-degraded {
+		--tone: var(--warning);
+		animation: status-breathe 2.8s ease-in-out infinite;
+	}
+	.status-unhealthy {
+		--tone: var(--danger);
+		animation: status-breathe 1.6s ease-in-out infinite;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.status-degraded,
+		.status-unhealthy {
+			animation: none;
+		}
+	}
 	.dot-grid {
 		background-image: radial-gradient(var(--border) 1px, transparent 1px);
 		background-size: 18px 18px;
 	}
 	.mask-fade {
 		mask-image: radial-gradient(80% 70% at 50% 0, #000 30%, transparent 75%);
+	}
+}
+
+@keyframes status-breathe {
+	0%,
+	100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
 	}
 }
 
