@@ -21,6 +21,9 @@
 	let editing = $state<Service | null>(null);
 	let groupBy = $state<'label' | 'site'>('label');
 	let siteFilter = $state<string | null>(null);
+	/** Where tiles open: HUB_NEW_TAB until this browser picks otherwise. */
+	let openIn = $state<'new' | 'same' | null>(null);
+	const newTab = $derived(openIn ? openIn === 'new' : hub.newTab);
 
 	$effect(() => {
 		theme.value = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
@@ -31,6 +34,8 @@
 			const saved = localStorage.getItem('hub-size');
 			size = saved === 'small' || saved === 'medium' ? saved : 'large';
 			groupBy = localStorage.getItem('hub-group') === 'site' ? 'site' : 'label';
+			const target = localStorage.getItem('hub-open-in');
+			openIn = target === 'new' || target === 'same' ? target : null;
 		} catch {}
 		// Status dots and new services show up without a reload.
 		const timer = setInterval(() => document.visibilityState === 'visible' && invalidate('hub:services'), 30_000);
@@ -49,6 +54,13 @@
 		size = v;
 		try {
 			localStorage.setItem('hub-size', v);
+		} catch {}
+	}
+
+	function setOpenIn(v: 'new' | 'same') {
+		openIn = v;
+		try {
+			localStorage.setItem('hub-open-in', v);
 		} catch {}
 	}
 
@@ -115,8 +127,8 @@
 	});
 	const down = $derived(visible.filter((s) => s.health === 'unhealthy').length);
 
-	function open(s: Service, newTab = hub.newTab) {
-		if (newTab) window.open(s.url, '_blank', 'noopener');
+	function open(s: Service, inNewTab = newTab) {
+		if (inNewTab) window.open(s.url, '_blank', 'noopener');
 		else location.href = s.url;
 	}
 
@@ -141,7 +153,7 @@
 			if (results.length) selected = (selected + (e.key === 'ArrowDown' ? 1 : -1) + results.length) % results.length;
 		} else if (e.key === 'Enter' && results[selected]) {
 			e.preventDefault();
-			open(results[selected], hub.newTab !== (e.metaKey || e.ctrlKey));
+			open(results[selected], newTab !== (e.metaKey || e.ctrlKey));
 			query = '';
 		}
 	}
@@ -175,7 +187,7 @@
 	<div class="group relative {s.wide ? WIDE[size] : ''}">
 		<a
 			href={s.url}
-			target={hub.newTab ? '_blank' : undefined}
+			target={newTab ? '_blank' : undefined}
 			rel="noopener"
 			class="card relative flex min-w-0 transition-all hover:-translate-y-px hover:bg-accent/60 hover:shadow-surface-lg focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none {large
 				? 'flex-col items-center gap-3.5 px-4 pt-7 pb-6 text-center'
@@ -338,6 +350,7 @@
 						{@render segmented('Group by', [['label', 'Label'], ['site', 'Site']], groupBy, (v) => setGroupBy(v as 'label' | 'site'))}
 					{/if}
 					{@render segmented('Size', [['small', 'S'], ['medium', 'M'], ['large', 'L']], size, (v) => setSize(v as Size))}
+					{@render segmented('Open in', [['new', 'New tab'], ['same', 'Same tab']], newTab ? 'new' : 'same', (v) => setOpenIn(v as 'new' | 'same'))}
 				</div>
 			</div>
 
