@@ -4,9 +4,9 @@
 # Pangolin in the hub's Settings page, or with the PANGOLIN_* variables below.
 
 services:
-  hub-modern:
-    image: ghcr.io/armistice-group/hub-modern:latest
-    container_name: hub-modern
+  atrium:
+    image: ghcr.io/armistice-group/atrium:latest
+    container_name: atrium
     restart: unless-stopped
     environment:
       # Who may open Settings (add connections, edit tiles): emails or usernames from Pangolin's
@@ -22,7 +22,9 @@ services:
       # Optional extras: links that aren't in Pangolin, icon and group overrides.
       - ./services.yaml:/data/services.yaml:ro
     networks:
-      - pangolin
+      pangolin:
+        # The hub's name before it was Atrium, so Pangolin targets set up as hub-modern keep working.
+        aliases: [hub-modern]
 
 volumes:
   hub-data:
@@ -30,6 +32,6 @@ volumes:
 networks:
   pangolin:
     # The Docker network Pangolin (self-hosted) or Newt (Pangolin Cloud) is on, so it can reach the
-    # hub as hub-modern:3000. Step 2 of the README shows how to find it; set PANGOLIN_NETWORK in .env.
+    # hub as atrium:3000. Step 2 of the README shows how to find it; set PANGOLIN_NETWORK in .env.
     name: ${PANGOLIN_NETWORK:-pangolin_frontend}
     external: true
